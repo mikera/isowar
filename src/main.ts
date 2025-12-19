@@ -1,4 +1,5 @@
 import { Application, Assets, Sprite, Container, SCALE_MODES } from "pixi.js";
+import { BloomFilter } from "@pixi/filter-bloom";
 import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
 (async () => {
@@ -10,6 +11,10 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
   // Append the application canvas to the document body
   document.getElementById("pixi-container")!.appendChild(app.canvas);
+
+  // Add bloom filter to the top level (stage)
+  const bloomFilter = new BloomFilter();
+  app.stage.filters = [bloomFilter as any];
 
   // Create a world container that will be moved by the camera
   const world = new Container();

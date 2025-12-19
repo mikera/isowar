@@ -10,6 +10,7 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@pixi/filter-bloom": "^5.1.1",
     "@pixi/tilemap": "^5.0.2",
     "pixi.js": "^8.8.1"
   },

@@ -52,7 +52,7 @@ export async function createTilemap(_app: Application): Promise<CompositeTilemap
     for (let x = 0; x < mapWidth; x++) {
       // Convert isometric coordinates to screen coordinates
       const screenX = tileToScreenX(x, y);
-      const screenY = tileToScreenY(x, y);
+      const screenY = tileToScreenY(x, y)+(Math.random()*4-2);
       tiles.push({
         x,
         y,
@@ -60,17 +60,18 @@ export async function createTilemap(_app: Application): Promise<CompositeTilemap
         screenY,
         tileIndex: 0,
       });
+
+      if (Math.random() < 0.1) {
+        tiles.push({
+          x,
+          y,
+          screenX,
+          screenY: screenY-16,
+          tileIndex: 0,
+        });
+      }
     }
   }
-
-  // Sort tiles by rendering order (back to front)
-  // In isometric view, tiles with higher y (further back) or higher x+y should render first
-  tiles.sort((a, b) => {
-    // Primary sort by y coordinate (rows further back render first)
-    if (a.y !== b.y) return a.y - b.y;
-    // Secondary sort by x coordinate (left to right)
-    return a.x - b.x;
-  });
 
   // Create the tilemap and add tiles in correct rendering order
   const tilemap = new CompositeTilemap();
