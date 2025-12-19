@@ -45,12 +45,26 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
   let cameraX = 0;
   let cameraY = 0;
 
+  // Camera zoom factor (start at 2.0)
+  let zoom = 2.0;
+  world.scale.set(zoom);
+
   // Track which keys are currently pressed
   const keysPressed = new Set<string>();
 
   // Listen for keydown events
   window.addEventListener("keydown", (event) => {
-    keysPressed.add(event.key.toLowerCase());
+    const key = event.key.toLowerCase();
+    keysPressed.add(key);
+
+    // Handle zoom controls
+    if (key === "+" || key === "=") {
+      zoom = Math.min(zoom + 0.1, 5.0); // Zoom in, max 5x
+      world.scale.set(zoom);
+    } else if (key === "-" || key === "_") {
+      zoom = Math.max(zoom - 0.1, 0.5); // Zoom out, min 0.5x
+      world.scale.set(zoom);
+    }
   });
 
   // Listen for keyup events
@@ -94,8 +108,9 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
     );
 
     // Calculate target camera position to center bunny on screen
-    const targetCameraX = app.screen.width / 2 - bunny.x;
-    const targetCameraY = app.screen.height / 2 - bunny.y;
+    // Account for zoom factor in the calculation
+    const targetCameraX = app.screen.width / 2 - bunny.x * zoom;
+    const targetCameraY = app.screen.height / 2 - bunny.y * zoom;
 
     // Smoothly interpolate camera position towards target
     const cameraSpeed = 0.1 * time.deltaTime;
@@ -105,11 +120,5 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
     // Update world container position (move camera)
     world.position.set(cameraX, cameraY);
 
-    // Rotate bunny to face movement direction
-    if (moveX !== 0 || moveY !== 0) {
-      // Calculate screen direction from map direction
-      const screenDx = tileToScreenX(moveX, moveY) - tileToScreenX(0, 0);
-      const screenDy = tileToScreenY(moveX, moveY) - tileToScreenY(0, 0);
-    }
   });
 })();
