@@ -1,5 +1,5 @@
-import { Application, Assets, Sprite } from "pixi.js";
-import { createTilemap, tileToScreenX, tileToScreenY, screenToTileX, screenToTileY } from "./map";
+import { Application, Assets, Sprite, Container } from "pixi.js";
+import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
 (async () => {
   // Create a new application
@@ -11,9 +11,13 @@ import { createTilemap, tileToScreenX, tileToScreenY, screenToTileX, screenToTil
   // Append the application canvas to the document body
   document.getElementById("pixi-container")!.appendChild(app.canvas);
 
-  // Create and add the tilemap
+  // Create a world container that will be moved by the camera
+  const world = new Container();
+  app.stage.addChild(world);
+
+  // Create and add the tilemap to the world
   const tilemap = await createTilemap(app);
-  app.stage.addChild(tilemap);
+  world.addChild(tilemap);
 
   // Load the bunny texture
   const texture = await Assets.load("/assets/bunny.png");
@@ -34,37 +38,54 @@ import { createTilemap, tileToScreenX, tileToScreenY, screenToTileX, screenToTil
     tileToScreenY(bunnyMapX, bunnyMapY)
   );
 
-  // Add the bunny to the stage
-  app.stage.addChild(bunny);
+  // Add the bunny to the world
+  world.addChild(bunny);
 
-  // Track mouse position in screen coordinates
-  let mouseScreenX = app.screen.width / 2;
-  let mouseScreenY = app.screen.height / 2;
+  // Camera position (target position to center on bunny)
+  let cameraX = 0;
+  let cameraY = 0;
 
-  // Listen for mouse movement
-  app.canvas.addEventListener("mousemove", (event) => {
-    const rect = app.canvas.getBoundingClientRect();
-    mouseScreenX = event.clientX - rect.left;
-    mouseScreenY = event.clientY - rect.top;
+  // Track which keys are currently pressed
+  const keysPressed = new Set<string>();
+
+  // Listen for keydown events
+  window.addEventListener("keydown", (event) => {
+    keysPressed.add(event.key.toLowerCase());
+  });
+
+  // Listen for keyup events
+  window.addEventListener("keyup", (event) => {
+    keysPressed.delete(event.key.toLowerCase());
   });
 
   // Listen for animate update
   app.ticker.add((time) => {
-    // Convert mouse screen coordinates to map coordinates
-    const mouseMapX = screenToTileX(mouseScreenX, mouseScreenY);
-    const mouseMapY = screenToTileY(mouseScreenX, mouseScreenY);
+    // Movement speed in map coordinates per frame
+    const moveSpeed = 0.1 * time.deltaTime;
+    let moveX = 0;
+    let moveY = 0;
 
-    // Calculate distance to mouse in map space
-    const dx = mouseMapX - bunnyMapX;
-    const dy = mouseMapY - bunnyMapY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    // Move bunny towards mouse in map space with smooth interpolation
-    const speed = 0.05 * time.deltaTime; // Adjust speed multiplier as needed
-    if (distance > 0.1) {
-      bunnyMapX += dx * speed;
-      bunnyMapY += dy * speed;
+    // Check for WASD key presses and calculate movement
+    if (keysPressed.has("w")) {
+      moveX -= 1;
+      moveY -= 1;
     }
+    if (keysPressed.has("s")) {
+      moveX += 1;
+      moveY += 1;
+    }
+    if (keysPressed.has("a")) {
+      moveX -= 1;
+      moveY += 1;
+    }
+    if (keysPressed.has("d")) {
+      moveX += 1;
+      moveY -= 1;
+    }
+
+    // Update bunny's map coordinates
+    bunnyMapX += moveX * moveSpeed;
+    bunnyMapY += moveY * moveSpeed;
 
     // Convert updated map coordinates to screen position
     bunny.position.set(
@@ -72,9 +93,23 @@ import { createTilemap, tileToScreenX, tileToScreenY, screenToTileX, screenToTil
       tileToScreenY(bunnyMapX, bunnyMapY)
     );
 
-    // Rotate bunny to face the mouse direction (in screen space for visual effect)
-    const screenDx = mouseScreenX - bunny.x;
-    const screenDy = mouseScreenY - bunny.y;
-    bunny.rotation = Math.atan2(screenDy, screenDx);
+    // Calculate target camera position to center bunny on screen
+    const targetCameraX = app.screen.width / 2 - bunny.x;
+    const targetCameraY = app.screen.height / 2 - bunny.y;
+
+    // Smoothly interpolate camera position towards target
+    const cameraSpeed = 0.1 * time.deltaTime;
+    cameraX += (targetCameraX - cameraX) * cameraSpeed;
+    cameraY += (targetCameraY - cameraY) * cameraSpeed;
+
+    // Update world container position (move camera)
+    world.position.set(cameraX, cameraY);
+
+    // Rotate bunny to face movement direction
+    if (moveX !== 0 || moveY !== 0) {
+      // Calculate screen direction from map direction
+      const screenDx = tileToScreenX(moveX, moveY) - tileToScreenX(0, 0);
+      const screenDy = tileToScreenY(moveX, moveY) - tileToScreenY(0, 0);
+    }
   });
 })();

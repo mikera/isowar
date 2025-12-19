@@ -45,19 +45,13 @@ export async function createTilemap(app: Application): Promise<CompositeTilemap>
       // Convert isometric coordinates to screen coordinates
       const screenX = tileToScreenX(x, y);
       const screenY = tileToScreenY(x, y);
-      
-      // Only add tiles that are visible on screen (with some margin)
-      if (screenX > -tileSize && screenX < app.screen.width + tileSize &&
-          screenY > -tileSize && screenY < app.screen.height + tileSize) {
-        const tileIndex = 0; // Use the single tile texture
-        tiles.push({
-          x,
-          y,
-          screenX,
-          screenY,
-          tileIndex,
-        });
-      }
+      tiles.push({
+        x,
+        y,
+        screenX,
+        screenY,
+        tileIndex: 0,
+      });
     }
   }
 
