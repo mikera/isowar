@@ -1,4 +1,4 @@
-import { Application, Assets, Sprite, Graphics, Texture } from "pixi.js";
+import { Application, Assets, Sprite, Texture, Rectangle } from "pixi.js";
 import { CompositeTilemap } from "@pixi/tilemap";
 
 (async () => {
@@ -11,21 +11,19 @@ import { CompositeTilemap } from "@pixi/tilemap";
   // Append the application canvas to the document body
   document.getElementById("pixi-container")!.appendChild(app.canvas);
 
-  // Create tile textures using Graphics
-  const tileSize = 32;
-  const tileTextures: Texture[] = [];
-
-  // Create different colored tiles
-  const colors = [0x4a90e2, 0x7ed321, 0xf5a623, 0xbd10e0, 0x50e3c2];
+  // Load the isometric art texture
+  const isometricArtTexture = await Assets.load("/assets/IsometricArt.png");
   
-  colors.forEach((color) => {
-    const graphics = new Graphics();
-    graphics.rect(0, 0, tileSize, tileSize);
-    graphics.fill(color);
-    // Add a border for better visibility
-    graphics.stroke({ width: 1, color: 0x333333 });
-    tileTextures.push(app.renderer.generateTexture(graphics));
+  // Extract tile sprite from (0,0) to (32,32)
+  const tileSize = 32;
+  const tileFrame = new Rectangle(0, 0, tileSize, tileSize);
+  const tileTexture = new Texture({
+    source: isometricArtTexture.source,
+    frame: tileFrame,
   });
+  
+  // Use the same texture for all tiles (or you can extract different tiles if needed)
+  const tileTextures: Texture[] = [tileTexture];
 
   // Isometric offsets
   // x direction: [+16, +8] (right and down)
@@ -61,7 +59,7 @@ import { CompositeTilemap } from "@pixi/tilemap";
       // Only add tiles that are visible on screen (with some margin)
       if (screenX > -tileSize && screenX < app.screen.width + tileSize &&
           screenY > -tileSize && screenY < app.screen.height + tileSize) {
-        const tileIndex = (x + y) % tileTextures.length;
+        const tileIndex = 0; // Use the single tile texture
         tiles.push({
           x,
           y,
