@@ -17,28 +17,51 @@ export const xOffsetY = 8;
 export const yOffsetX = -16;
 export const yOffsetY = 8;
 
+interface TileDefinition {
+  id: number;
+  name: string;
+  x: number;
+  y: number;
+}
+
+interface TilesConfig {
+  image: string;
+  tileSize: number;
+  tiles: TileDefinition[];
+}
+
 export async function createTilemap(_app: Application): Promise<CompositeTilemap> {
-  // Load the isometric art texture
-  const isometricArtTexture = await Assets.load("/assets/IsometricArt.png");
+  // Load tiles configuration
+  const tilesConfigResponse = await fetch("/assets/tiles.json");
+  const tilesConfig: TilesConfig = await tilesConfigResponse.json();
   
-  // Extract tile sprite from (0,0) to (32,32)
-  const tileSize = 32;
-  const tileFrame = new Rectangle(0, 0, tileSize, tileSize);
-  const tileTexture = new Texture({
-    source: isometricArtTexture.source,
-    frame: tileFrame,
-  });
+  // Load the isometric art texture
+  const isometricArtTexture = await Assets.load(tilesConfig.image);
   
   // Set scale mode to NEAREST for pixel-perfect rendering
-  if (tileTexture.source) {
-    tileTexture.source.scaleMode = SCALE_MODES.NEAREST;
-  }
   if (isometricArtTexture.source) {
     isometricArtTexture.source.scaleMode = SCALE_MODES.NEAREST;
   }
   
-  // Use the same texture for all tiles (or you can extract different tiles if needed)
-  const tileTextures: Texture[] = [tileTexture];
+  // Extract tile textures from the configuration
+  const tileTextures: Texture[] = [];
+  const tileSize = tilesConfig.tileSize;
+  
+  for (const tileDef of tilesConfig.tiles) {
+    const tileFrame = new Rectangle(tileDef.x, tileDef.y, tileSize, tileSize);
+    const tileTexture = new Texture({
+      source: isometricArtTexture.source,
+      frame: tileFrame,
+    });
+    
+    // Set scale mode to NEAREST for pixel-perfect rendering
+    if (tileTexture.source) {
+      tileTexture.source.scaleMode = SCALE_MODES.NEAREST;
+    }
+    
+    // Ensure the texture is at the correct index
+    tileTextures[tileDef.id] = tileTexture;
+  }
 
   // Calculate map dimensions for isometric grid
   // Need enough tiles to cover the screen with isometric layout
@@ -67,7 +90,7 @@ export async function createTilemap(_app: Application): Promise<CompositeTilemap
           y,
           screenX,
           screenY: screenY-16,
-          tileIndex: 0,
+          tileIndex: 1,
         });
       }
     }

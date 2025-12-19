@@ -1,0 +1,19 @@
+{
+  "image": "/assets/IsometricArt.png",
+  "tileSize": 32,
+  "tiles": [
+    {
+      "id": 0,
+      "name": "block",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": 1,
+      "name": "tree",
+      "x": 0,
+      "y": 64
+    }
+  ]
+}
+
