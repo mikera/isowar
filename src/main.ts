@@ -1,4 +1,4 @@
-import { Application, Assets, Sprite, Container } from "pixi.js";
+import { Application, Assets, Sprite, Container, SCALE_MODES } from "pixi.js";
 import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
 (async () => {
@@ -6,7 +6,7 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
   const app = new Application();
 
   // Initialize the application
-  await app.init({ background: "#1099bb", resizeTo: window });
+  await app.init({ background: "#1099bb", resizeTo: window, antialias: false });
 
   // Append the application canvas to the document body
   document.getElementById("pixi-container")!.appendChild(app.canvas);
@@ -21,6 +21,10 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
   // Load the bunny texture
   const texture = await Assets.load("/assets/bunny.png");
+  // Ensure bunny texture uses NEAREST scaling
+  if (texture.source) {
+    texture.source.scaleMode = SCALE_MODES.NEAREST;
+  }
 
   // Create a bunny Sprite
   const bunny = new Sprite(texture);
@@ -59,10 +63,10 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
     // Handle zoom controls
     if (key === "+" || key === "=") {
-      zoom = Math.min(zoom + 0.1, 5.0); // Zoom in, max 5x
+      zoom = Math.min(zoom *2, 16.0); // Zoom in, max 5x
       world.scale.set(zoom);
     } else if (key === "-" || key === "_") {
-      zoom = Math.max(zoom - 0.1, 0.5); // Zoom out, min 0.5x
+      zoom = Math.max(zoom *0.5, 0.125); // Zoom out, min 0.5x
       world.scale.set(zoom);
     }
   });

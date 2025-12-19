@@ -1,4 +1,4 @@
-import { Application, Assets, Texture, Rectangle } from "pixi.js";
+import { Application, Assets, Texture, Rectangle, SCALE_MODES } from "pixi.js";
 import { CompositeTilemap } from "@pixi/tilemap";
 
 interface TileData {
@@ -17,7 +17,7 @@ export const xOffsetY = 8;
 export const yOffsetX = -16;
 export const yOffsetY = 8;
 
-export async function createTilemap(app: Application): Promise<CompositeTilemap> {
+export async function createTilemap(_app: Application): Promise<CompositeTilemap> {
   // Load the isometric art texture
   const isometricArtTexture = await Assets.load("/assets/IsometricArt.png");
   
@@ -28,6 +28,14 @@ export async function createTilemap(app: Application): Promise<CompositeTilemap>
     source: isometricArtTexture.source,
     frame: tileFrame,
   });
+  
+  // Set scale mode to NEAREST for pixel-perfect rendering
+  if (tileTexture.source) {
+    tileTexture.source.scaleMode = SCALE_MODES.NEAREST;
+  }
+  if (isometricArtTexture.source) {
+    isometricArtTexture.source.scaleMode = SCALE_MODES.NEAREST;
+  }
   
   // Use the same texture for all tiles (or you can extract different tiles if needed)
   const tileTextures: Texture[] = [tileTexture];
