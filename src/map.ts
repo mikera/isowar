@@ -61,7 +61,9 @@ void main(void){
     vec2 v = vec2(x, y);
     v = v + aPosition;
 
-    gl_Position = vec4((uTranslationMatrix * vec3(v, 1.0)).xy, -0.5+(aPosition.y*0.01), 1.0);
+
+    float depth = clamp(0.5-(v.y)*0.0001, 0.1, 1.0);
+    gl_Position = vec4((uTranslationMatrix * vec3(v, 1.0)).xy, depth, 1.0);
 
     if(uRound == 1.0)
     {
