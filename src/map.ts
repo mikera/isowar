@@ -1,5 +1,11 @@
-import { Application, Assets, Texture, Rectangle, SCALE_MODES } from "pixi.js";
-import { CompositeTilemap } from "@pixi/tilemap";
+import { Application, Assets, Texture, Rectangle, SCALE_MODES, Container, Sprite } from "pixi.js";
+
+// Custom TileMap class that extends Container and provides addParticle method
+class TileMap extends Container {
+  addParticle(sprite: Sprite): void {
+    this.addChild(sprite);
+  }
+}
 
 interface TileData {
   x: number;
@@ -30,7 +36,7 @@ interface TilesConfig {
   tiles: TileDefinition[];
 }
 
-export async function createTilemap(_app: Application): Promise<CompositeTilemap> {
+export async function createTilemap(_app: Application): Promise<TileMap> {
   // Load tiles configuration
   const tilesConfigResponse = await fetch("/assets/tiles.json");
   const tilesConfig: TilesConfig = await tilesConfigResponse.json();
@@ -96,11 +102,23 @@ export async function createTilemap(_app: Application): Promise<CompositeTilemap
     }
   }
 
-  // Create the tilemap and add tiles in correct rendering order
-  const tilemap = new CompositeTilemap();
+  // Sort tiles by rendering order (back to front)
+  // In isometric view, tiles with higher y (further back) should render first
+  tiles.sort((a, b) => {
+    // Primary sort by y coordinate (rows further back render first)
+    if (a.y !== b.y) return a.y - b.y;
+    // Secondary sort by x coordinate (left to right)
+    return a.x - b.x;
+  });
+
+  // Create a TileMap container
+  const tilemap = new TileMap();
   
+  // Create sprites for each tile and add them to the container
   for (const tile of tiles) {
-    tilemap.tile(tileTextures[tile.tileIndex], tile.screenX, tile.screenY);
+    const sprite = new Sprite(tileTextures[tile.tileIndex]);
+    sprite.position.set(tile.screenX, tile.screenY);
+    tilemap.addParticle(sprite);
   }
 
   return tilemap;
