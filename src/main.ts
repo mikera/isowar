@@ -127,7 +127,7 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
     cameraY += (targetCameraY - cameraY) * cameraSpeed;
 
     // Update world container position (move camera)
-    world.position.set(cameraX, cameraY);
+    world.position.set(Math.floor(cameraX), Math.floor(cameraY));
 
   });
 })();

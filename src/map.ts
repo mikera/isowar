@@ -1,4 +1,4 @@
-import { Application, Assets, Texture, Rectangle, SCALE_MODES, Container, Sprite } from "pixi.js";
+import { Application, Assets, Texture, Rectangle, SCALE_MODES, Container, ParticleContainer, Particle, Sprite } from "pixi.js";
 
 // Custom TileMap class that extends Container and provides addParticle method
 class TileMap extends Container {
@@ -36,7 +36,7 @@ interface TilesConfig {
   tiles: TileDefinition[];
 }
 
-export async function createTilemap(_app: Application): Promise<TileMap> {
+export async function createTilemap(_app: Application): Promise<ParticleContainer> {
   // Load tiles configuration
   const tilesConfigResponse = await fetch("/assets/tiles.json");
   const tilesConfig: TilesConfig = await tilesConfigResponse.json();
@@ -112,13 +112,25 @@ export async function createTilemap(_app: Application): Promise<TileMap> {
   });
 
   // Create a TileMap container
-  const tilemap = new TileMap();
+  const tilemap = new ParticleContainer();
   
-  // Create sprites for each tile and add them to the container
+  // Create particles for each tile and add them to the container
   for (const tile of tiles) {
-    const sprite = new Sprite(tileTextures[tile.tileIndex]);
-    sprite.position.set(tile.screenX, tile.screenY);
-    tilemap.addParticle(sprite);
+    const part = new Particle(tileTextures[tile.tileIndex]);
+    part.x=tile.screenX;
+    part.y=tile.screenY;   
+
+    // Add random tint to floor blocks (tileIndex 0)
+    if (tile.tileIndex === 0) {
+      // Generate random tint value between 0.8 and 0.9
+      // Convert to RGB (0-255 range) and then to hex
+      const r=Math.floor((Math.random()*0.1+0.5)*255);
+      const g=Math.floor((Math.random()*0.1+0.6)*255);
+      const b=Math.floor((Math.random()*0.1+0.4)*255);
+      part.tint = (r << 16) | (g << 8) | b;
+    }
+    
+    tilemap.addParticle(part);
   }
 
   return tilemap;
