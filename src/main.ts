@@ -7,7 +7,7 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
   const app = new Application();
 
   // Initialize the application
-  await app.init({ background: "#1099bb", resizeTo: window, antialias: false });
+  await app.init({ background: "#102030", resizeTo: window, antialias: false });
 
   // Append the application canvas to the document body
   document.getElementById("pixi-container")!.appendChild(app.canvas);

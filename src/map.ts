@@ -120,13 +120,18 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
     part.x=tile.screenX;
     part.y=tile.screenY;   
 
+    const light=Math.max(0.0,1.0-distance(part.x,part.y,20,20)/500.0);
+    const lightScale=0.1+light*0.9;
+    function distance(x1: number, y1: number, x2: number, y2: number): number {
+      return Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+    }
     // Add random tint to floor blocks (tileIndex 0)
-    if (tile.tileIndex === 0) {
+    if (tile.tileIndex >= 0) {
       // Generate random tint value between 0.8 and 0.9
       // Convert to RGB (0-255 range) and then to hex
-      const r=Math.floor((Math.random()*0.1+0.5)*255);
-      const g=Math.floor((Math.random()*0.1+0.6)*255);
-      const b=Math.floor((Math.random()*0.1+0.4)*255);
+      const r=Math.floor((Math.random()*0.1+0.5)*255*lightScale);
+      const g=Math.floor((Math.random()*0.1+0.6)*255*lightScale);
+      const b=Math.floor((Math.random()*0.1+0.4)*255*lightScale);
       part.tint = (r << 16) | (g << 8) | b;
     }
     
@@ -135,6 +140,12 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
 
   return tilemap;
 }
+
+export function distance(x1: number, y1: number, x2: number, y2: number): number {
+  return Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+}
+
+
 
 /**
  * Calculate the screen X position of a tile given its map coordinates
