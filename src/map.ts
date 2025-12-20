@@ -1,10 +1,9 @@
-import { Application, Assets, Texture, Rectangle, Matrix,Color, TextureStyle,SCALE_MODES, ParticleContainer, Particle, Shader, GlProgram, GpuProgram, ShaderFromGroups } from "pixi.js";
+import { Application, Assets, Texture, Rectangle, Matrix, Color, TextureStyle, SCALE_MODES, ParticleContainer, Particle, Shader, GlProgram } from "pixi.js";
 
 interface TileData {
   x: number;
   y: number;
-  screenX: number;
-  screenY: number;
+  z: number;
   tileIndex: number;
 }
 
@@ -15,12 +14,14 @@ export const xOffsetX = 16;
 export const xOffsetY = 8;
 export const yOffsetX = -16;
 export const yOffsetY = 8;
+export const zOffsetY = -16;
 
 interface TileDefinition {
   id: number;
   name: string;
   x: number;
   y: number;
+  z: number;
 }
 
 interface TilesConfig {
@@ -62,7 +63,7 @@ void main(void){
     v = v + aPosition;
 
 
-    float depth = clamp(0.5-(v.y)*0.0001, 0.1, 1.0);
+    float depth = clamp(0.5-(aPosition.y+0.1*aPosition.x)*0.001, 0.1, 0.9);
     gl_Position = vec4((uTranslationMatrix * vec3(v, 1.0)).xy, depth, 1.0);
 
     if(uRound == 1.0)
@@ -84,7 +85,11 @@ uniform sampler2D uTexture;
 
 void main(void){
     vec4 color = texture2D(uTexture, vUV) * vColor;
-    gl_FragColor = color;
+    if (color.a ==0.0) discard;
+    if (color.a == 1.0) {gl_FragColor = color;}
+    
+    vec4 alpha=color.aaaa;
+    gl_FragColor=alpha*color+(1.0-alpha)*gl_FragColor;
 }
   `;
 
@@ -160,13 +165,11 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
   for (let y = 0; y < mapHeight; y++) {
     for (let x = 0; x < mapWidth; x++) {
       // Convert isometric coordinates to screen coordinates
-      const screenX = tileToScreenX(x, y);
-      const screenY = tileToScreenY(x, y)+Math.floor(Math.random()*2);
+
       tiles.push({
         x,
         y,
-        screenX,
-        screenY,
+        z: 0,
         tileIndex: 0,
       });
 
@@ -174,8 +177,7 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
         tiles.push({
           x,
           y,
-          screenX,
-          screenY: screenY-16,
+          z: 1,
           tileIndex: 1+Math.floor(Math.random()*2),
         });
       }
@@ -194,12 +196,28 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
   // Create a TileMap container
   const tilemap = new ParticleContainer();
   
+  // Enable depth testing for the container through render state
+  // Access the renderer and enable depth testing
+  if (_app.renderer) {
+    const renderer = _app.renderer as any;
+    // Enable depth testing in the renderer's state
+    if (renderer.gl) {
+      const gl = renderer.gl;
+      // Enable depth testing
+      gl.enable(gl.DEPTH_TEST);
+      gl.depthFunc(gl.LEQUAL);
+      // Enable depth writing
+      gl.depthMask(true);
+    }
+  }
+  
   // Create particles for each tile and add them to the container
   // Tiles are already sorted by y-coordinate (back to front), so particles will be in correct depth order
   for (const tile of tiles) {
-    const part = new Particle(tileTextures[tile.tileIndex]);
-    part.x=tile.screenX;
-    part.y=tile.screenY;   
+    const screenX = tileToScreenX(tile.x, tile.y, tile.z);
+    const screenY = tileToScreenY(tile.x, tile.y, tile.z);
+
+    const part=new Particle({texture:tileTextures[tile.tileIndex],x:screenX,y:screenY,anchorX:0.5,anchorY:0.75});
 
     const light=Math.max(0.0,1.0-distance(part.x,part.y,20,20)/500.0);
     const lightScale=0.1+light*0.9;
@@ -237,7 +255,7 @@ export function distance(x1: number, y1: number, x2: number, y2: number): number
  * @param mapY The Y coordinate in map space
  * @returns The screen X position
  */
-export function tileToScreenX(mapX: number, mapY: number): number {
+export function tileToScreenX(mapX: number, mapY: number, z: number =0): number {
   return mapX * xOffsetX + mapY * yOffsetX;
 }
 
@@ -247,8 +265,8 @@ export function tileToScreenX(mapX: number, mapY: number): number {
  * @param mapY The Y coordinate in map space
  * @returns The screen Y position
  */
-export function tileToScreenY(mapX: number, mapY: number): number {
-  return mapX * xOffsetY + mapY * yOffsetY;
+export function tileToScreenY(mapX: number, mapY: number, z: number): number {
+  return mapX * xOffsetY + mapY * yOffsetY + z*zOffsetY;
 }
 
 /**

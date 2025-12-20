@@ -43,8 +43,8 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
   // Convert initial map coordinates to screen position
   bunny.position.set(
-    tileToScreenX(bunnyMapX, bunnyMapY),
-    tileToScreenY(bunnyMapX, bunnyMapY)
+    tileToScreenX(bunnyMapX, bunnyMapY,1),
+    tileToScreenY(bunnyMapX, bunnyMapY,1)
   );
 
   // Add the bunny to the world
@@ -112,8 +112,8 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
     // Convert updated map coordinates to screen position
     bunny.position.set(
-      tileToScreenX(bunnyMapX, bunnyMapY),
-      tileToScreenY(bunnyMapX, bunnyMapY)
+      tileToScreenX(bunnyMapX, bunnyMapY,1),
+      tileToScreenY(bunnyMapX, bunnyMapY,1)
     );
 
     // Calculate target camera position to center bunny on screen
