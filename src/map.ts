@@ -1,11 +1,4 @@
-import { Application, Assets, Texture, Rectangle, SCALE_MODES, Container, ParticleContainer, Particle, Sprite } from "pixi.js";
-
-// Custom TileMap class that extends Container and provides addParticle method
-class TileMap extends Container {
-  addParticle(sprite: Sprite): void {
-    this.addChild(sprite);
-  }
-}
+import { Application, Assets, Texture, Rectangle, Matrix,Color, TextureStyle,SCALE_MODES, ParticleContainer, Particle, Shader, GlProgram, GpuProgram, ShaderFromGroups } from "pixi.js";
 
 interface TileData {
   x: number;
@@ -34,6 +27,91 @@ interface TilesConfig {
   image: string;
   tileSize: number;
   tiles: TileDefinition[];
+}
+
+  // Custom vertex shader for depth sorting based on y-coordinate
+  // This modifies the z-coordinate based on y-position for proper depth buffer ordering
+  const customVertexShader = `
+attribute vec2 aVertex;
+attribute vec2 aUV;
+attribute vec4 aColor;
+
+attribute vec2 aPosition;
+attribute float aRotation;
+
+uniform mat3 uTranslationMatrix;
+uniform float uRound;
+uniform vec2 uResolution;
+uniform vec4 uColor;
+
+varying vec2 vUV;
+varying vec4 vColor;
+
+vec2 roundPixels(vec2 position, vec2 targetSize)
+{       
+    return (floor(((position * 0.5 + 0.5) * targetSize) + 0.5) / targetSize) * 2.0 - 1.0;
+}
+
+void main(void){
+    float cosRotation = cos(aRotation);
+    float sinRotation = sin(aRotation);
+    float x = aVertex.x * cosRotation - aVertex.y * sinRotation;
+    float y = aVertex.x * sinRotation + aVertex.y * cosRotation;
+
+    vec2 v = vec2(x, y);
+    v = v + aPosition;
+
+    gl_Position = vec4((uTranslationMatrix * vec3(v, 1.0)).xy, -0.5+(aPosition.y*0.01), 1.0);
+
+    if(uRound == 1.0)
+    {
+        gl_Position.xy = roundPixels(gl_Position.xy, uResolution);
+    }
+
+    vUV = aUV;
+    vColor = vec4(aColor.rgb * aColor.a, aColor.a) * uColor;
+}
+  `;
+  
+  // Standard fragment shader (using PixiJS default template)
+  const customFragmentShader = `
+    varying vec2 vUV;
+varying vec4 vColor;
+
+uniform sampler2D uTexture;
+
+void main(void){
+    vec4 color = texture2D(uTexture, vUV) * vColor;
+    gl_FragColor = color;
+}
+  `;
+
+class ParticleShader extends Shader
+{
+    constructor()
+    {
+        const glProgram = GlProgram.from({
+            vertex: customVertexShader,
+            fragment: customFragmentShader
+        });
+
+        super({
+            glProgram,
+            resources: {
+                // this will be replaced with the texture from the particle container
+                uTexture: Texture.WHITE.source,
+                // this will be replaced with the texture style from the particle container
+                uSampler: new TextureStyle({}),
+                // this will be replaced with the local uniforms from the particle container
+                uniforms: {
+                    uTranslationMatrix: { value: new Matrix(), type: 'mat3x3<f32>' },
+                    uColor: { value: new Color(0xFFFFFF), type: 'vec4<f32>' },
+                    uRound: { value: 1, type: 'f32' },
+                    uResolution: { value: [0, 0], type: 'vec2<f32>' },
+                }
+            }
+        });
+    }
 }
 
 export async function createTilemap(_app: Application): Promise<ParticleContainer> {
@@ -115,6 +193,7 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
   const tilemap = new ParticleContainer();
   
   // Create particles for each tile and add them to the container
+  // Tiles are already sorted by y-coordinate (back to front), so particles will be in correct depth order
   for (const tile of tiles) {
     const part = new Particle(tileTextures[tile.tileIndex]);
     part.x=tile.screenX;
@@ -137,6 +216,9 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
     
     tilemap.addParticle(part);
   }
+
+
+  tilemap.shader=new ParticleShader();
 
   return tilemap;
 }
