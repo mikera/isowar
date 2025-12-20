@@ -54,16 +54,10 @@ vec2 roundPixels(vec2 position, vec2 targetSize)
 }
 
 void main(void){
-    float cosRotation = cos(aRotation);
-    float sinRotation = sin(aRotation);
-    float x = aVertex.x * cosRotation - aVertex.y * sinRotation;
-    float y = aVertex.x * sinRotation + aVertex.y * cosRotation;
+    vec2 v = aVertex + aPosition;
 
-    vec2 v = vec2(x, y);
-    v = v + aPosition;
-
-
-    float depth = clamp(0.5-(aPosition.y+0.1*aPosition.x)*0.001, 0.1, 0.9);
+    // This is a crazy hack to get the depth working, since we don't need to use rotation in this shader
+    float depth = clamp(aRotation, 0.01, 0.99);
     gl_Position = vec4((uTranslationMatrix * vec3(v, 1.0)).xy, depth, 1.0);
 
     if(uRound == 1.0)
@@ -178,20 +172,11 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
           x,
           y,
           z: 1,
-          tileIndex: 1+Math.floor(Math.random()*2),
+          tileIndex: 1+Math.floor(Math.random()*4),
         });
       }
     }
   }
-
-  // Sort tiles by rendering order (back to front)
-  // In isometric view, tiles with higher y (further back) should render first
-  tiles.sort((a, b) => {
-    // Primary sort by y coordinate (rows further back render first)
-    if (a.y !== b.y) return a.y - b.y;
-    // Secondary sort by x coordinate (left to right)
-    return a.x - b.x;
-  });
 
   // Create a TileMap container
   const tilemap = new ParticleContainer();
@@ -216,8 +201,9 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
   for (const tile of tiles) {
     const screenX = tileToScreenX(tile.x, tile.y, tile.z);
     const screenY = tileToScreenY(tile.x, tile.y, tile.z);
+    const depth=0.5-(tile.y+tile.x+tile.z)*0.001;
 
-    const part=new Particle({texture:tileTextures[tile.tileIndex],x:screenX,y:screenY,anchorX:0.5,anchorY:0.75});
+    const part=new Particle({texture:tileTextures[tile.tileIndex],x:screenX,y:screenY,anchorX:0.5,anchorY:0.75,rotate:depth});
 
     const light=Math.max(0.0,1.0-distance(part.x,part.y,20,20)/500.0);
     const lightScale=0.1+light*0.9;
