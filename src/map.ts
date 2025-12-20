@@ -75,7 +75,7 @@ export async function createTilemap(_app: Application): Promise<CompositeTilemap
     for (let x = 0; x < mapWidth; x++) {
       // Convert isometric coordinates to screen coordinates
       const screenX = tileToScreenX(x, y);
-      const screenY = tileToScreenY(x, y)+(Math.random()*4-2);
+      const screenY = tileToScreenY(x, y)+Math.floor(Math.random()*2);
       tiles.push({
         x,
         y,
@@ -90,7 +90,7 @@ export async function createTilemap(_app: Application): Promise<CompositeTilemap
           y,
           screenX,
           screenY: screenY-16,
-          tileIndex: 1,
+          tileIndex: 1+Math.floor(Math.random()*2),
         });
       }
     }
