@@ -1,4 +1,4 @@
-import { Application, Assets, Sprite, Container, SCALE_MODES } from "pixi.js";
+import { Application, Assets, Sprite, Container, SCALE_MODES, Text } from "pixi.js";
 import { BloomFilter } from "@pixi/filter-bloom";
 import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
@@ -15,6 +15,16 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
   // Add bloom filter to the top level (stage)
   const bloomFilter = new BloomFilter();
   app.stage.filters = [bloomFilter as any];
+
+  // Create FPS counter text (add to stage so it stays fixed on screen)
+  const fpsText = new Text("FPS: 0", {
+    fontFamily: "Arial",
+    fontSize: 16,
+    fill: 0xffffff,
+  });
+  fpsText.position.set(10, 10);
+  fpsText.zIndex = 1000; // Ensure it's on top
+  app.stage.addChild(fpsText);
 
   // Create a world container that will be moved by the camera
   const world = new Container();
@@ -81,8 +91,14 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
     keysPressed.delete(event.key.toLowerCase());
   });
 
+
+
   // Listen for animate update
   app.ticker.add((time) => {
+    // Update FPS counter
+    const fps = Math.round(app.ticker.FPS);
+    fpsText.text = `FPS: ${fps}`;
+    
     // Movement speed in map coordinates per frame
     const moveSpeed = 0.1 * time.deltaTime;
     let moveX = 0;
