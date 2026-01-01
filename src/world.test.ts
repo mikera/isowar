@@ -9,10 +9,11 @@ describe("World", () => {
   });
 
   describe("getTile and setTile", () => {
-    it("should get default tile values", () => {
+    it("should get generated tile values", () => {
       const tile = world.getTile(0, 0);
-      expect(tile.floor).toBe(0);
-      expect(tile.scenery).toBe(0);
+      // Tiles are now generated, so they may have non-zero values
+      expect(typeof tile.floor).toBe("number");
+      expect(typeof tile.scenery).toBe("number");
     });
 
     it("should set and get a tile", () => {
@@ -163,14 +164,16 @@ describe("World", () => {
 describe("Chunk", () => {
   describe("getTile and setTile", () => {
     it("should get default tile values", () => {
-      const chunk = new Chunk(0, 0);
+      const world = new World();
+      const chunk = new Chunk(0, 0, world);
       const tile = chunk.getTile(0, 0);
       expect(tile.floor).toBe(0);
       expect(tile.scenery).toBe(0);
     });
 
     it("should set and get a tile", () => {
-      const chunk = new Chunk(0, 0);
+      const world = new World();
+      const chunk = new Chunk(0, 0, world);
       const tile: Tile = { floor: 1, scenery: 2 };
       chunk.setTile(10, 20, tile);
       
@@ -179,7 +182,8 @@ describe("Chunk", () => {
     });
 
     it("should throw error for out of bounds coordinates", () => {
-      const chunk = new Chunk(0, 0);
+      const world = new World();
+      const chunk = new Chunk(0, 0, world);
       
       expect(() => chunk.getTile(-1, 0)).toThrow();
       expect(() => chunk.getTile(0, -1)).toThrow();
@@ -193,7 +197,8 @@ describe("Chunk", () => {
     });
 
     it("should handle boundary coordinates", () => {
-      const chunk = new Chunk(0, 0);
+      const world = new World();
+      const chunk = new Chunk(0, 0, world);
       const tile: Tile = { floor: 99, scenery: 99 };
       
       chunk.setTile(CHUNK_SIZE - 1, CHUNK_SIZE - 1, tile);
@@ -203,13 +208,15 @@ describe("Chunk", () => {
 
   describe("chunk coordinates", () => {
     it("should store chunk coordinates", () => {
-      const chunk = new Chunk(5, 10);
+      const world = new World();
+      const chunk = new Chunk(5, 10, world);
       expect(chunk.chunkX).toBe(5);
       expect(chunk.chunkY).toBe(10);
     });
 
     it("should handle negative chunk coordinates", () => {
-      const chunk = new Chunk(-5, -10);
+      const world = new World();
+      const chunk = new Chunk(-5, -10, world);
       expect(chunk.chunkX).toBe(-5);
       expect(chunk.chunkY).toBe(-10);
     });

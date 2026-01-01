@@ -1,3 +1,5 @@
+import { generateChunk } from "./worldgen";
+
 /**
  * Chunk size constant (64x64 tiles per chunk)
  */
@@ -9,45 +11,6 @@ export const CHUNK_SIZE = 64;
 export interface Tile {
   floor: number;    // Floor tile ID
   scenery: number;  // Scenery tile ID
-}
-
-/**
- * Represents a 64x64 chunk of the world
- */
-export class Chunk {
-  private tiles: Tile[];
-  public readonly chunkX: number;
-  public readonly chunkY: number;
-
-  constructor(chunkX: number, chunkY: number) {
-    this.chunkX = chunkX;
-    this.chunkY = chunkY;
-    // Initialize with 4096 tiles (CHUNK_SIZE * CHUNK_SIZE)
-    this.tiles = new Array(CHUNK_SIZE * CHUNK_SIZE);
-    for (let i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++) {
-      this.tiles[i] = { floor: 0, scenery: 0 };
-    }
-  }
-
-  /**
-   * Get a tile at local coordinates within this chunk (0 to CHUNK_SIZE-1)
-   */
-  getTile(localX: number, localY: number): Tile {
-    if (localX < 0 || localX >= CHUNK_SIZE || localY < 0 || localY >= CHUNK_SIZE) {
-      throw new Error(`Tile coordinates out of bounds: (${localX}, ${localY})`);
-    }
-    return this.tiles[localY * CHUNK_SIZE + localX];
-  }
-
-  /**
-   * Set a tile at local coordinates within this chunk (0 to CHUNK_SIZE-1)
-   */
-  setTile(localX: number, localY: number, tile: Tile): void {
-    if (localX < 0 || localX >= CHUNK_SIZE || localY < 0 || localY >= CHUNK_SIZE) {
-      throw new Error(`Tile coordinates out of bounds: (${localX}, ${localY})`);
-    }
-    this.tiles[localY * CHUNK_SIZE + localX] = tile;
-  }
 }
 
 /**
@@ -76,7 +39,8 @@ export class World {
     const key = this.getChunkKey(chunkX, chunkY);
     let chunk = this.chunks.get(key);
     if (!chunk) {
-      chunk = new Chunk(chunkX, chunkY);
+      chunk = new Chunk(chunkX, chunkY, this);
+      chunk.generate(); // Generate chunk data after creation
       this.chunks.set(key, chunk);
     }
     return chunk;
@@ -131,3 +95,60 @@ export class World {
   }
 }
 
+/**
+ * Represents a 64x64 chunk of the world
+ */
+export class Chunk {
+  private tiles: Tile[];
+  public readonly chunkX: number;
+  public readonly chunkY: number;
+  public readonly world: World;
+  private generated: boolean = false;
+
+  constructor(chunkX: number, chunkY: number, world: World) {
+    this.chunkX = chunkX;
+    this.chunkY = chunkY;
+    this.world = world;
+    // Initialize with 4096 tiles (CHUNK_SIZE * CHUNK_SIZE)
+    this.tiles = new Array(CHUNK_SIZE * CHUNK_SIZE);
+    for (let i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++) {
+      this.tiles[i] = { floor: 0, scenery: 0 };
+    }
+  }
+
+  /**
+   * Generate the chunk data using the world generation function
+   */
+  generate(): void {
+    if (this.generated) {
+      return; // Already generated
+    }
+    
+    // Calculate world coordinates for the chunk origin
+    const worldX = this.chunkX * CHUNK_SIZE;
+    const worldY = this.chunkY * CHUNK_SIZE;
+    
+    generateChunk(worldX, worldY, this);
+    this.generated = true;
+  }
+
+  /**
+   * Get a tile at local coordinates within this chunk (0 to CHUNK_SIZE-1)
+   */
+  getTile(localX: number, localY: number): Tile {
+    if (localX < 0 || localX >= CHUNK_SIZE || localY < 0 || localY >= CHUNK_SIZE) {
+      throw new Error(`Tile coordinates out of bounds: (${localX}, ${localY})`);
+    }
+    return this.tiles[localY * CHUNK_SIZE + localX];
+  }
+
+  /**
+   * Set a tile at local coordinates within this chunk (0 to CHUNK_SIZE-1)
+   */
+  setTile(localX: number, localY: number, tile: Tile): void {
+    if (localX < 0 || localX >= CHUNK_SIZE || localY < 0 || localY >= CHUNK_SIZE) {
+      throw new Error(`Tile coordinates out of bounds: (${localX}, ${localY})`);
+    }
+    this.tiles[localY * CHUNK_SIZE + localX] = tile;
+  }
+}
