@@ -6,7 +6,7 @@ import { World } from "./world";
 /**
  * Game update rate in ticks per second
  */
-const TICKS_PER_SECOND = 60;
+const TICKS_PER_SECOND = 24;
 const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
 
 (async () => {
@@ -81,8 +81,8 @@ const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
   soldier.anchor.set(0.5);
 
   // Soldier's logical map coordinates (starting at 10, 10)
-  let soldierMapX = 10;
-  let soldierMapY = 10;
+  let soldierMapX = 2;
+  let soldierMapY = 2;
 
   // Convert initial map coordinates to screen position
   soldier.position.set(

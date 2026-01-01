@@ -7,6 +7,10 @@
  * Floor is rendered at z=0, scenery is rendered at z=1
  */
 export interface Tile {
+  /** World X coordinate */
+  x: number;
+  /** World Y coordinate */
+  y: number;
   /** Floor tile ID (rendered at z=0) */
   floor: number;
   /** Scenery tile ID (rendered at z=1, 0 means no scenery) */

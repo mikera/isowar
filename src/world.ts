@@ -135,8 +135,17 @@ export class Chunk {
     this.rng = world.getChunkRNG(chunkX, chunkY);
     // Initialize with 4096 tiles (CHUNK_SIZE * CHUNK_SIZE)
     this.tiles = new Array(CHUNK_SIZE * CHUNK_SIZE);
+    const worldBaseX = chunkX * CHUNK_SIZE;
+    const worldBaseY = chunkY * CHUNK_SIZE;
     for (let i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++) {
-      this.tiles[i] = { floor: 0, scenery: 0 };
+      const localX = i % CHUNK_SIZE;
+      const localY = Math.floor(i / CHUNK_SIZE);
+      this.tiles[i] = { 
+        x: worldBaseX + localX,
+        y: worldBaseY + localY,
+        floor: 0, 
+        scenery: 0 
+      };
     }
   }
 

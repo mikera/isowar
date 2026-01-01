@@ -102,14 +102,14 @@ export async function createTilemap(_app: Application, world: World, minX: numbe
   const loadedTiles = await loadTiles();
   const tileTextures = loadedTiles.textures;
 
-  const tiles: Array<{ x: number; y: number; tile: Tile }> = [];
+  const tiles: Tile[] = [];
 
   // Get tiles from the world for the specified range
   for (let y = minY; y <= maxY; y++) {
     for (let x = minX; x <= maxX; x++) {
-      // Get tile from world
+      // Get tile from world (tile already contains x,y coordinates)
       const tile = world.getTile(x, y);
-      tiles.push({ x, y, tile });
+      tiles.push(tile);
     }
   }
 
@@ -137,14 +137,14 @@ export async function createTilemap(_app: Application, world: World, minX: numbe
     return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
   }
 
-  for (const tileData of tiles) {
-    const screenX = tileToScreenX(tileData.x, tileData.y);
+  for (const tile of tiles) {
+    const screenX = tileToScreenX(tile.x, tile.y);
     
     // Render floor at z=0
-    const floorScreenY = tileToScreenY(tileData.x, tileData.y, 0);
-    const floorDepth = 0.5 - (tileData.y + tileData.x + 0) * 0.001;
+    const floorScreenY = tileToScreenY(tile.x, tile.y, 0);
+    const floorDepth = 0.5 - (tile.y + tile.x + 0) * 0.001;
     const floorPart = new Particle({ 
-      texture: tileTextures[tileData.tile.floor], 
+      texture: tileTextures[tile.floor], 
       x: screenX, 
       y: floorScreenY, 
       anchorX: 0.5, 
@@ -163,11 +163,11 @@ export async function createTilemap(_app: Application, world: World, minX: numbe
     tilemap.addParticle(floorPart);
 
     // Render scenery at z=1 if present
-    if (tileData.tile.scenery > 0) {
-      const sceneryScreenY = tileToScreenY(tileData.x, tileData.y, 1);
-      const sceneryDepth = 0.5 - (tileData.y + tileData.x + 1) * 0.001;
+    if (tile.scenery > 0) {
+      const sceneryScreenY = tileToScreenY(tile.x, tile.y, 1);
+      const sceneryDepth = 0.5 - (tile.y + tile.x + 1) * 0.001;
       const sceneryPart = new Particle({ 
-        texture: tileTextures[tileData.tile.scenery], 
+        texture: tileTextures[tile.scenery], 
         x: screenX, 
         y: sceneryScreenY, 
         anchorX: 0.5, 

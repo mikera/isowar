@@ -20,6 +20,8 @@ export function generateChunk(worldX: number, worldY: number, chunk: Chunk): voi
       
       // Default: floor tile 0, no scenery
       const tile: Tile = {
+        x: tileWorldX,
+        y: tileWorldY,
         floor: 0,
         scenery: 0,
       };
