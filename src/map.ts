@@ -1,4 +1,5 @@
-import { Application, Assets, Texture, Rectangle, Matrix, Color, TextureStyle, SCALE_MODES, ParticleContainer, Particle, Shader, GlProgram } from "pixi.js";
+import { Application, Matrix, Color, Texture, TextureStyle, ParticleContainer, Particle, Shader, GlProgram } from "pixi.js";
+import { loadTiles } from "./tiles";
 
 interface TileData {
   x: number;
@@ -15,20 +16,6 @@ export const xOffsetY = 8;
 export const yOffsetX = -16;
 export const yOffsetY = 8;
 export const zOffsetY = -16;
-
-interface TileDefinition {
-  id: number;
-  name: string;
-  x: number;
-  y: number;
-  z: number;
-}
-
-interface TilesConfig {
-  image: string;
-  tileSize: number;
-  tiles: TileDefinition[];
-}
 
   // Custom vertex shader for depth sorting based on y-coordinate
   // This modifies the z-coordinate based on y-position for proper depth buffer ordering
@@ -116,37 +103,9 @@ class ParticleShader extends Shader
 }
 
 export async function createTilemap(_app: Application): Promise<ParticleContainer> {
-  // Load tiles configuration
-  const tilesConfigResponse = await fetch("/assets/tiles.json");
-  const tilesConfig: TilesConfig = await tilesConfigResponse.json();
-  
-  // Load the isometric art texture
-  const isometricArtTexture = await Assets.load(tilesConfig.image);
-  
-  // Set scale mode to NEAREST for pixel-perfect rendering
-  if (isometricArtTexture.source) {
-    isometricArtTexture.source.scaleMode = SCALE_MODES.NEAREST;
-  }
-  
-  // Extract tile textures from the configuration
-  const tileTextures: Texture[] = [];
-  const tileSize = tilesConfig.tileSize;
-  
-  for (const tileDef of tilesConfig.tiles) {
-    const tileFrame = new Rectangle(tileDef.x, tileDef.y, tileSize, tileSize);
-    const tileTexture = new Texture({
-      source: isometricArtTexture.source,
-      frame: tileFrame,
-    });
-    
-    // Set scale mode to NEAREST for pixel-perfect rendering
-    if (tileTexture.source) {
-      tileTexture.source.scaleMode = SCALE_MODES.NEAREST;
-    }
-    
-    // Ensure the texture is at the correct index
-    tileTextures[tileDef.id] = tileTexture;
-  }
+  // Load tile definitions and textures
+  const loadedTiles = await loadTiles();
+  const tileTextures = loadedTiles.textures;
 
   // Calculate map dimensions for isometric grid
   // Need enough tiles to cover the screen with isometric layout
