@@ -1,0 +1,13 @@
+{
+  "image": "/assets/IsometricArt.png",
+  "spriteSize": 32,
+  "sprites": [
+    {
+      "id": 0,
+      "name": "soldier",
+      "x": 0,
+      "y": 96
+    }
+  ]
+}
+

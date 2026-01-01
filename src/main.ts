@@ -1,4 +1,4 @@
-import { Application, Assets, Sprite, Container, SCALE_MODES, Text } from "pixi.js";
+import { Application, Assets, Sprite, Container, SCALE_MODES, Text, Texture, Rectangle } from "pixi.js";
 import { BloomFilter } from "@pixi/filter-bloom";
 import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
@@ -34,33 +34,55 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
   const tilemap = await createTilemap(app);
   world.addChild(tilemap);
 
-  // Load the bunny texture
-  const texture = await Assets.load("/assets/bunny.png");
-  // Ensure bunny texture uses NEAREST scaling
-  if (texture.source) {
-    texture.source.scaleMode = SCALE_MODES.NEAREST;
+  // Load sprites configuration
+  const spritesConfigResponse = await fetch("/assets/sprites.json");
+  const spritesConfig = await spritesConfigResponse.json();
+  
+  // Load the isometric art texture
+  const isometricArtTexture = await Assets.load(spritesConfig.image);
+  // Ensure texture uses NEAREST scaling
+  if (isometricArtTexture.source) {
+    isometricArtTexture.source.scaleMode = SCALE_MODES.NEAREST;
   }
 
-  // Create a bunny Sprite
-  const bunny = new Sprite(texture);
+  // Find soldier sprite definition
+  const soldierDef = spritesConfig.sprites.find((s: any) => s.name === "soldier");
+  if (!soldierDef) {
+    throw new Error("Soldier sprite not found in sprites.json");
+  }
+
+  // Extract soldier sprite from the configuration
+  const spriteSize = spritesConfig.spriteSize;
+  const soldierFrame = new Rectangle(soldierDef.x, soldierDef.y, spriteSize, spriteSize);
+  const soldierTexture = new Texture({
+    source: isometricArtTexture.source,
+    frame: soldierFrame,
+  });
+  // Ensure soldier texture uses NEAREST scaling
+  if (soldierTexture.source) {
+    soldierTexture.source.scaleMode = SCALE_MODES.NEAREST;
+  }
+
+  // Create a soldier Sprite
+  const soldier = new Sprite(soldierTexture);
 
   // Center the sprite's anchor point
-  bunny.anchor.set(0.5);
+  soldier.anchor.set(0.5);
 
-  // Bunny's logical map coordinates (starting at 10, 10)
-  let bunnyMapX = 10;
-  let bunnyMapY = 10;
+  // Soldier's logical map coordinates (starting at 10, 10)
+  let soldierMapX = 10;
+  let soldierMapY = 10;
 
   // Convert initial map coordinates to screen position
-  bunny.position.set(
-    tileToScreenX(bunnyMapX, bunnyMapY,1),
-    tileToScreenY(bunnyMapX, bunnyMapY,1)
+  soldier.position.set(
+    tileToScreenX(soldierMapX, soldierMapY, 1),
+    tileToScreenY(soldierMapX, soldierMapY, 1)
   );
 
-  // Add the bunny to the world
-  world.addChild(bunny);
+  // Add the soldier to the world
+  world.addChild(soldier);
 
-  // Camera position (target position to center on bunny)
+  // Camera position (target position to center on soldier)
   let cameraX = 0;
   let cameraY = 0;
 
@@ -122,20 +144,20 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
       moveY -= 1;
     }
 
-    // Update bunny's map coordinates
-    bunnyMapX += moveX * moveSpeed;
-    bunnyMapY += moveY * moveSpeed;
+    // Update soldier's map coordinates
+    soldierMapX += moveX * moveSpeed;
+    soldierMapY += moveY * moveSpeed;
 
     // Convert updated map coordinates to screen position
-    bunny.position.set(
-      tileToScreenX(bunnyMapX, bunnyMapY,1),
-      tileToScreenY(bunnyMapX, bunnyMapY,1)
+    soldier.position.set(
+      tileToScreenX(soldierMapX, soldierMapY, 1),
+      tileToScreenY(soldierMapX, soldierMapY, 1)
     );
 
-    // Calculate target camera position to center bunny on screen
+    // Calculate target camera position to center soldier on screen
     // Account for zoom factor in the calculation
-    const targetCameraX = app.screen.width / 2 - bunny.x * zoom;
-    const targetCameraY = app.screen.height / 2 - bunny.y * zoom;
+    const targetCameraX = app.screen.width / 2 - soldier.x * zoom;
+    const targetCameraY = app.screen.height / 2 - soldier.y * zoom;
 
     // Smoothly interpolate camera position towards target
     const cameraSpeed = 0.1 * time.deltaTime;
