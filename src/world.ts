@@ -1,5 +1,7 @@
 import { generateChunk } from "./worldgen";
 import type { Tile } from "./types";
+import * as prand from "pure-rand";
+import type { RandomGenerator } from "pure-rand";
 
 /**
  * Chunk size constant (64x64 tiles per chunk)
@@ -27,6 +29,20 @@ export class World {
     } else {
       this.seed = Math.floor(Math.random() * MAX_SEED);
     }
+  }
+
+  /**
+   * Get a unique RNG for a chunk based on chunk coordinates
+   * Each chunk gets a unique, independent RNG derived from the world seed
+   * @param chunkX Chunk X coordinate
+   * @param chunkY Chunk Y coordinate
+   * @returns A unique RNG for the chunk
+   */
+  getChunkRNG(chunkX: number, chunkY: number): RandomGenerator {
+    // Combine world seed with chunk coordinates to generate a unique seed
+    // Using prime multipliers to ensure good distribution
+    const chunkSeed = this.seed ^ (chunkX * 0x9e3779b9) ^ (chunkY * 0x6a09e667);
+    return prand.xoroshiro128plus(chunkSeed);
   }
 
   /**
@@ -108,12 +124,15 @@ export class Chunk {
   public readonly chunkX: number;
   public readonly chunkY: number;
   public readonly world: World;
+  readonly rng: RandomGenerator;
   private generated: boolean = false;
 
   constructor(chunkX: number, chunkY: number, world: World) {
     this.chunkX = chunkX;
     this.chunkY = chunkY;
     this.world = world;
+    // Generate a unique RNG for this chunk based on its coordinates
+    this.rng = world.getChunkRNG(chunkX, chunkY);
     // Initialize with 4096 tiles (CHUNK_SIZE * CHUNK_SIZE)
     this.tiles = new Array(CHUNK_SIZE * CHUNK_SIZE);
     for (let i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++) {

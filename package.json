@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@pixi/filter-bloom": "^5.1.1",
-    "@pixi/tilemap": "^5.0.2",
-    "pixi.js": "^8.14.3"
+    "pixi.js": "^8.14.3",
+    "pure-rand": "^7.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -24,7 +24,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.7.4",
     "typescript": "~5.7.3",
-    "typescript-eslint": "^8.50.0",
+    "typescript-eslint": "^8.51.0",
     "vite": "^6.4.1",
     "vitest": "^4.0.16"
   }
