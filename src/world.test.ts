@@ -75,6 +75,17 @@ describe("World", () => {
       // Both tiles are in the same chunk (0, 0)
       expect(world.getChunks().length).toBe(1);
     });
+
+    it("should generate the same tile for worlds with the same seed", () => {
+      const seed = 12345;
+      const world1 = new World(seed);
+      const world2 = new World(seed);
+      
+      const tile1 = world1.getTile(10, 10);
+      const tile2 = world2.getTile(10, 10);
+      
+      expect(tile1).toEqual(tile2);
+    });
   });
 
   describe("chunk coordinate mapping", () => {

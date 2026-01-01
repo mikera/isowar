@@ -6,6 +6,11 @@ import { generateChunk } from "./worldgen";
 export const CHUNK_SIZE = 64;
 
 /**
+ * Maximum seed value (2^48, a safe integer)
+ */
+export const MAX_SEED = 2 ** 48;
+
+/**
  * Represents a single tile in the world
  */
 export interface Tile {
@@ -19,9 +24,16 @@ export interface Tile {
 export class World {
   private chunks: Map<number, Chunk>;
   private static readonly CHUNK_KEY_MULTIPLIER = 100000;
+  public readonly seed: number;
 
-  constructor() {
+  constructor(seed?: number) {
     this.chunks = new Map();
+    if (seed !== undefined) {
+      // Ensure seed is an integer and within valid range, handling negative values
+      this.seed = ((Math.floor(seed) % MAX_SEED) + MAX_SEED) % MAX_SEED;
+    } else {
+      this.seed = Math.floor(Math.random() * MAX_SEED);
+    }
   }
 
   /**
