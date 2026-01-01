@@ -1,4 +1,5 @@
 import { generateChunk } from "./worldgen";
+import type { Tile } from "./types";
 
 /**
  * Chunk size constant (64x64 tiles per chunk)
@@ -9,14 +10,6 @@ export const CHUNK_SIZE = 64;
  * Maximum seed value (2^48, a safe integer)
  */
 export const MAX_SEED = 2 ** 48;
-
-/**
- * Represents a single tile in the world
- */
-export interface Tile {
-  floor: number;    // Floor tile ID
-  scenery: number;  // Scenery tile ID
-}
 
 /**
  * World class that manages chunks and provides logical access to tiles

@@ -1,4 +1,5 @@
-import type { Chunk, Tile } from "./world";
+import type { Chunk } from "./world";
+import type { Tile } from "./types";
 import { CHUNK_SIZE } from "./world";
 
 /**

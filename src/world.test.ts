@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { World, Chunk, CHUNK_SIZE, type Tile } from "./world";
+import { World, Chunk, CHUNK_SIZE } from "./world";
+import type { Tile } from "./types";
 
 describe("World", () => {
   let world: World;
