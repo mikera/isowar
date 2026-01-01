@@ -2,6 +2,12 @@ import { Application, Assets, Sprite, Container, SCALE_MODES, Text, Texture, Rec
 import { BloomFilter } from "@pixi/filter-bloom";
 import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
+/**
+ * Game update rate in ticks per second
+ */
+const TICKS_PER_SECOND = 60;
+const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
+
 (async () => {
   // Create a new application
   const app = new Application();
@@ -75,7 +81,7 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
   // Convert initial map coordinates to screen position
   soldier.position.set(
-    tileToScreenX(soldierMapX, soldierMapY, 1),
+    tileToScreenX(soldierMapX, soldierMapY),
     tileToScreenY(soldierMapX, soldierMapY, 1)
   );
 
@@ -113,16 +119,17 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
     keysPressed.delete(event.key.toLowerCase());
   });
 
+  // Game update loop state
+  let lastGameUpdateTime = performance.now();
+  let gameUpdateAccumulator = 0;
 
-
-  // Listen for animate update
-  app.ticker.add((time) => {
-    // Update FPS counter
-    const fps = Math.round(app.ticker.FPS);
-    fpsText.text = `FPS: ${fps}`;
-    
-    // Movement speed in map coordinates per frame
-    const moveSpeed = 0.1 * time.deltaTime;
+  /**
+   * Game update function - runs at fixed TICKS_PER_SECOND rate
+   * Handles game logic: movement, world updates, etc.
+   */
+  function gameUpdate(): void {
+    // Movement speed in map coordinates per tick
+    const moveSpeed = 0.1;
     let moveX = 0;
     let moveY = 0;
 
@@ -150,9 +157,19 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
 
     // Convert updated map coordinates to screen position
     soldier.position.set(
-      tileToScreenX(soldierMapX, soldierMapY, 1),
+      tileToScreenX(soldierMapX, soldierMapY),
       tileToScreenY(soldierMapX, soldierMapY, 1)
     );
+  }
+
+  /**
+   * Render update function - runs at display framerate
+   * Handles camera movement, rendering, and display updates
+   */
+  function renderUpdate(deltaTime: number): void {
+    // Update FPS counter
+    const fps = Math.round(app.ticker.FPS);
+    fpsText.text = `FPS: ${fps}`;
 
     // Calculate target camera position to center soldier on screen
     // Account for zoom factor in the calculation
@@ -160,12 +177,30 @@ import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
     const targetCameraY = app.screen.height / 2 - soldier.y * zoom;
 
     // Smoothly interpolate camera position towards target
-    const cameraSpeed = 0.1 * time.deltaTime;
+    const cameraSpeed = 0.1 * deltaTime;
     cameraX += (targetCameraX - cameraX) * cameraSpeed;
     cameraY += (targetCameraY - cameraY) * cameraSpeed;
 
     // Update world container position (move camera)
     world.position.set(Math.floor(cameraX), Math.floor(cameraY));
+  }
 
+  // PixiJS ticker for rendering (runs at display framerate)
+  app.ticker.add((time) => {
+    const currentTime = performance.now();
+    const frameTime = currentTime - lastGameUpdateTime;
+    lastGameUpdateTime = currentTime;
+
+    // Accumulate time for fixed timestep game updates
+    gameUpdateAccumulator += frameTime;
+
+    // Run game updates at fixed rate
+    while (gameUpdateAccumulator >= TICK_DURATION_MS) {
+      gameUpdate();
+      gameUpdateAccumulator -= TICK_DURATION_MS;
+    }
+
+    // Render update (camera, display) runs every frame
+    renderUpdate(time.deltaTime);
   });
 })();

@@ -1,12 +1,6 @@
 import { Application, Matrix, Color, Texture, TextureStyle, ParticleContainer, Particle, Shader, GlProgram } from "pixi.js";
 import { loadTiles } from "./tiles";
-
-interface TileData {
-  x: number;
-  y: number;
-  z: number;
-  tileIndex: number;
-}
+import type { Tile } from "./types";
 
 // Isometric offsets
 // x direction: [+16, +8] (right and down)
@@ -112,28 +106,23 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
   const mapWidth = 50;
   const mapHeight = 50;
 
-  const tiles: TileData[] = [];
+  const tiles: Array<{ x: number; y: number; tile: Tile }> = [];
 
-  // Calculate screen positions for all tiles
+  // Calculate screen positions for all tiles - one tile per x,y location
   for (let y = 0; y < mapHeight; y++) {
     for (let x = 0; x < mapWidth; x++) {
-      // Convert isometric coordinates to screen coordinates
+      // Create a single tile for this x,y location
+      const tile: Tile = {
+        floor: 0,
+        scenery: 0,
+      };
 
-      tiles.push({
-        x,
-        y,
-        z: 0,
-        tileIndex: 0,
-      });
-
+      // Randomly add scenery
       if (Math.random() < 0.1) {
-        tiles.push({
-          x,
-          y,
-          z: 1,
-          tileIndex: 1+Math.floor(Math.random()*4),
-        });
+        tile.scenery = 1 + Math.floor(Math.random() * 4);
       }
+
+      tiles.push({ x, y, tile });
     }
   }
 
@@ -156,30 +145,51 @@ export async function createTilemap(_app: Application): Promise<ParticleContaine
   }
   
   // Create particles for each tile and add them to the container
-  // Tiles are already sorted by y-coordinate (back to front), so particles will be in correct depth order
-  for (const tile of tiles) {
-    const screenX = tileToScreenX(tile.x, tile.y, tile.z);
-    const screenY = tileToScreenY(tile.x, tile.y, tile.z);
-    const depth=0.5-(tile.y+tile.x+tile.z)*0.001;
+  // Render both floor (z=0) and scenery (z=1) from the same tile
+  function distance(x1: number, y1: number, x2: number, y2: number): number {
+    return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+  }
 
-    const part=new Particle({texture:tileTextures[tile.tileIndex],x:screenX,y:screenY,anchorX:0.5,anchorY:0.75,rotate:depth});
-
-    const light=Math.max(0.0,1.0-distance(part.x,part.y,20,20)/500.0);
-    const lightScale=0.1+light*0.9;
-    function distance(x1: number, y1: number, x2: number, y2: number): number {
-      return Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
-    }
-    // Add random tint to floor blocks (tileIndex 0)
-    if (tile.tileIndex >= 0) {
-      // Generate random tint value between 0.8 and 0.9
-      // Convert to RGB (0-255 range) and then to hex
-      const r=Math.floor((Math.random()*0.1+0.5)*255*lightScale);
-      const g=Math.floor((Math.random()*0.1+0.6)*255*lightScale);
-      const b=Math.floor((Math.random()*0.1+0.4)*255*lightScale);
-      part.tint = (r << 16) | (g << 8) | b;
-    }
+  for (const tileData of tiles) {
+    const screenX = tileToScreenX(tileData.x, tileData.y);
     
-    tilemap.addParticle(part);
+    // Render floor at z=0
+    const floorScreenY = tileToScreenY(tileData.x, tileData.y, 0);
+    const floorDepth = 0.5 - (tileData.y + tileData.x + 0) * 0.001;
+    const floorPart = new Particle({ 
+      texture: tileTextures[tileData.tile.floor], 
+      x: screenX, 
+      y: floorScreenY, 
+      anchorX: 0.5, 
+      anchorY: 0.75, 
+      rotate: floorDepth 
+    });
+
+    const light = Math.max(0.0, 1.0 - distance(floorPart.x, floorPart.y, 20, 20) / 500.0);
+    const lightScale = 0.1 + light * 0.9;
+    // Add random tint to floor blocks
+    const r = Math.floor((Math.random() * 0.1 + 0.5) * 255 * lightScale);
+    const g = Math.floor((Math.random() * 0.1 + 0.6) * 255 * lightScale);
+    const b = Math.floor((Math.random() * 0.1 + 0.4) * 255 * lightScale);
+    floorPart.tint = (r << 16) | (g << 8) | b;
+    
+    tilemap.addParticle(floorPart);
+
+    // Render scenery at z=1 if present
+    if (tileData.tile.scenery > 0) {
+      const sceneryScreenY = tileToScreenY(tileData.x, tileData.y, 1);
+      const sceneryDepth = 0.5 - (tileData.y + tileData.x + 1) * 0.001;
+      const sceneryPart = new Particle({ 
+        texture: tileTextures[tileData.tile.scenery], 
+        x: screenX, 
+        y: sceneryScreenY, 
+        anchorX: 0.5, 
+        anchorY: 0.75, 
+        rotate: sceneryDepth 
+      });
+      
+      tilemap.addParticle(sceneryPart);
+    }
   }
 
 
@@ -200,7 +210,7 @@ export function distance(x1: number, y1: number, x2: number, y2: number): number
  * @param mapY The Y coordinate in map space
  * @returns The screen X position
  */
-export function tileToScreenX(mapX: number, mapY: number, z: number =0): number {
+export function tileToScreenX(mapX: number, mapY: number): number {
   return mapX * xOffsetX + mapY * yOffsetX;
 }
 

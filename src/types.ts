@@ -3,12 +3,13 @@
  */
 
 /**
- * Represents a single tile in the world
+ * Represents a single tile in the world at a specific x,y location
+ * Floor is rendered at z=0, scenery is rendered at z=1
  */
 export interface Tile {
-  /** Floor tile ID */
+  /** Floor tile ID (rendered at z=0) */
   floor: number;
-  /** Scenery tile ID */
+  /** Scenery tile ID (rendered at z=1, 0 means no scenery) */
   scenery: number;
 }
 
