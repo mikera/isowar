@@ -1,6 +1,7 @@
 import { Application, Assets, Sprite, Container, SCALE_MODES, Text, Texture, Rectangle } from "pixi.js";
 import { BloomFilter } from "@pixi/filter-bloom";
 import { createTilemap, tileToScreenX, tileToScreenY } from "./map";
+import { World } from "./world";
 
 /**
  * Game update rate in ticks per second
@@ -32,13 +33,17 @@ const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
   fpsText.zIndex = 1000; // Ensure it's on top
   app.stage.addChild(fpsText);
 
-  // Create a world container that will be moved by the camera
-  const world = new Container();
-  app.stage.addChild(world);
+  // Create the game world model
+  const gameWorld = new World();
 
-  // Create and add the tilemap to the world
-  const tilemap = await createTilemap(app);
-  world.addChild(tilemap);
+  // Create a world container that will be moved by the camera
+  const worldContainer = new Container();
+  app.stage.addChild(worldContainer);
+
+  // Create and add the tilemap to the world container
+  // Render tiles from -25 to 25 in both directions (50x50 area)
+  const tilemap = await createTilemap(app, gameWorld, -25, -25, 24, 24);
+  worldContainer.addChild(tilemap);
 
   // Load sprites configuration
   const spritesConfigResponse = await fetch("/assets/sprites.json");
@@ -85,8 +90,8 @@ const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
     tileToScreenY(soldierMapX, soldierMapY, 1)
   );
 
-  // Add the soldier to the world
-  world.addChild(soldier);
+  // Add the soldier to the world container
+  worldContainer.addChild(soldier);
 
   // Camera position (target position to center on soldier)
   let cameraX = 0;
@@ -94,7 +99,7 @@ const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
 
   // Camera zoom factor (start at 2.0)
   let zoom = 2.0;
-  world.scale.set(zoom);
+  worldContainer.scale.set(zoom);
 
   // Track which keys are currently pressed
   const keysPressed = new Set<string>();
@@ -107,10 +112,10 @@ const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
     // Handle zoom controls
     if (key === "+" || key === "=") {
       zoom = Math.min(zoom *2, 16.0); // Zoom in, max 5x
-      world.scale.set(zoom);
+      worldContainer.scale.set(zoom);
     } else if (key === "-" || key === "_") {
       zoom = Math.max(zoom *0.5, 0.125); // Zoom out, min 0.5x
-      world.scale.set(zoom);
+      worldContainer.scale.set(zoom);
     }
   });
 
@@ -167,9 +172,9 @@ const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
    * Handles camera movement, rendering, and display updates
    */
   function renderUpdate(deltaTime: number): void {
-    // Update FPS counter
+    // Update FPS counter with soldier position
     const fps = Math.round(app.ticker.FPS);
-    fpsText.text = `FPS: ${fps}`;
+    fpsText.text = `FPS: ${fps} | Soldier: (${soldierMapX.toFixed(1)}, ${soldierMapY.toFixed(1)})`;
 
     // Calculate target camera position to center soldier on screen
     // Account for zoom factor in the calculation
@@ -182,7 +187,7 @@ const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
     cameraY += (targetCameraY - cameraY) * cameraSpeed;
 
     // Update world container position (move camera)
-    world.position.set(Math.floor(cameraX), Math.floor(cameraY));
+    worldContainer.position.set(Math.floor(cameraX), Math.floor(cameraY));
   }
 
   // PixiJS ticker for rendering (runs at display framerate)

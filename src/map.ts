@@ -1,6 +1,7 @@
 import { Application, Matrix, Color, Texture, TextureStyle, ParticleContainer, Particle, Shader, GlProgram } from "pixi.js";
 import { loadTiles } from "./tiles";
 import type { Tile } from "./types";
+import type { World } from "./world";
 
 // Isometric offsets
 // x direction: [+16, +8] (right and down)
@@ -96,32 +97,18 @@ class ParticleShader extends Shader
     }
 }
 
-export async function createTilemap(_app: Application): Promise<ParticleContainer> {
+export async function createTilemap(_app: Application, world: World, minX: number, minY: number, maxX: number, maxY: number): Promise<ParticleContainer> {
   // Load tile definitions and textures
   const loadedTiles = await loadTiles();
   const tileTextures = loadedTiles.textures;
 
-  // Calculate map dimensions for isometric grid
-  // Need enough tiles to cover the screen with isometric layout
-  const mapWidth = 50;
-  const mapHeight = 50;
-
   const tiles: Array<{ x: number; y: number; tile: Tile }> = [];
 
-  // Calculate screen positions for all tiles - one tile per x,y location
-  for (let y = 0; y < mapHeight; y++) {
-    for (let x = 0; x < mapWidth; x++) {
-      // Create a single tile for this x,y location
-      const tile: Tile = {
-        floor: 0,
-        scenery: 0,
-      };
-
-      // Randomly add scenery
-      if (Math.random() < 0.1) {
-        tile.scenery = 1 + Math.floor(Math.random() * 4);
-      }
-
+  // Get tiles from the world for the specified range
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      // Get tile from world
+      const tile = world.getTile(x, y);
       tiles.push({ x, y, tile });
     }
   }
