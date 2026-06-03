@@ -26,9 +26,9 @@ export interface TileDefinition {
   /** Human-readable tile name */
   name: string;
   /** X coordinate in the texture atlas */
-  x: number;
+  sx: number;
   /** Y coordinate in the texture atlas */
-  y: number;
+  sy: number;
   /** Z coordinate (height) in the texture atlas */
   z?: number;
 }

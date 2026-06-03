@@ -35,7 +35,7 @@ export async function loadTiles(): Promise<LoadedTiles> {
   const tileSize = tilesConfig.tileSize;
   
   for (const tileDef of tilesConfig.tiles) {
-    const tileFrame = new Rectangle(tileDef.x, tileDef.y, tileSize, tileSize);
+    const tileFrame = new Rectangle(tileDef.sx, tileDef.sy, tileSize, tileSize);
     const tileTexture = new Texture({
       source: isometricArtTexture.source,
       frame: tileFrame,
